@@ -1,38 +1,32 @@
-const express = require("express");
-const cors = require("cors");
-const fetch = require("node-fetch");
+// api/contact.js
+import fetch from 'node-fetch';
 
-const app = express();
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method Not Allowed' });
+  }
 
-app.use(cors());
-app.use(express.json());
+  const { name, email, subject, message } = req.body;
 
-app.post("/contact", async (req, res) => {
-  const { name, email, message } = req.body;
-
-  if (!name || !email || !message) {
-    return res.status(400).json({ error: "All fields are required." });
+  if (!name || !email || !subject || !message) {
+    return res.status(400).json({ error: 'All fields are required.' });
   }
 
   try {
     const googleAppsScriptUrl = process.env.GOOGLE_APPS_SCRIPT_URL;
 
     const response = await fetch(googleAppsScriptUrl, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ name, email, message }),
+      body: JSON.stringify({ name, email, subject, message }),
     });
 
-    if (!response.ok) {
-      throw new Error("Failed to send data to Google Sheets");
-    }
+    const result = await response.json();
 
-    res.status(200).json({ success: "Message successfully sent!" });
+    return res.status(200).json(result);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
-});
-
-module.exports = app;
+}
